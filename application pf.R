@@ -27,19 +27,19 @@ library(fPortfolio)
 rdt_journalier=as.timeSeries(rdt_j[,titres_selec_oat]) #necessaire de transformer rdt_j en séries temporelles
 
 spec=portfolioSpec() #description des spécificités de notre portefeuille
-setTargetReturn(spec)=mean(colMeans(X)) # spécifier un rendement objectif
+setTargetReturn(spec)=mean(colMeans(rdt_journalier)) # spécifier un rendement objectif
 spec
 
 constraints=c("minW[1:n]=-1") #spécification des contraintes, ici on autorise des poids négatifs
-portfolioConstraints(X, spec,constraints) # description des contraintes
+portfolioConstraints(rdt_journalier, spec,constraints) # description des contraintes
 
-frontier <- portfolioFrontier(X, spec,constraints) # calcul l'ensemble des points de la frontière efficiente
+frontier <- portfolioFrontier(rdt_journalier, spec,constraints) # calcul l'ensemble des points de la frontière efficiente
 print(frontier)
 
 tailoredFrontierPlot(object = frontier) # tracé de la frontière efficiente
 
 weightsPlot(frontier,col= palette(rainbow(20))) # graphique permettant de voir les poids de chaque actifs pour chaque portefeuille de la frontière efficiente
 
-efficientPortfolio(X, spec,constraints) #  calcul le portefeuille optimal compte tenu du rendement objectif et des contraintes imposées
-tangencyPortfolio(X,spec,constraints) # calcul le portefeuille ayant le meilleur rapport rendement/risque de la frontière efficiente
+efficientPortfolio(rdt_journalier, spec,constraints) #  calcul le portefeuille optimal compte tenu du rendement objectif et des contraintes imposées
+tangencyPortfolio(rdt_journalier,spec,constraints) # calcul le portefeuille ayant le meilleur rapport rendement/risque de la frontière efficiente
 
