@@ -25,16 +25,18 @@ fronteffi(var(datap_j[,titres_selec_oat]),colMeans(rdt_j[,titres_selec_oat]),mea
 #Frontière efficiente
 library(fPortfolio)
 
-rdt_journalier=as.timeSeries(rdt_j[,titres_selec_oat]) #necessaire de transformer rdt_j en séries temporelles avec la library fPortfolio
+rdt_journalier=as.timeSeries(global_return(datap_j)) # necessaire de transformer rdt_j en séries temporelles avec la library fPortfolio
+rdt_journalier_oat=rdt_journalier[,titres_selec_oat] # sans l'oAT
 
 spec=portfolioSpec() #description des spécificités de notre portefeuille
 setTargetReturn(spec)=mean(colMeans(rdt_journalier)) # spécifier un rendement objectif
+setRiskFreeRate(spec)=mean(rdt_journalier[,"OAT"]) # rendement moyen de l'actif sans risque
 spec
 
 constraints=c("minW[1:n]=-1") #spécification des contraintes, ici on autorise des poids négatifs
-portfolioConstraints(rdt_journalier, spec,constraints) # description des contraintes
+portfolioConstraints(rdt_journalier_oat, spec,constraints) # description des contraintes
 
-frontier <- portfolioFrontier(rdt_journalier, spec,constraints) # calcul l'ensemble des points de la frontière efficiente
+frontier <- portfolioFrontier(rdt_journalier_oat, spec,constraints) # calcul l'ensemble des points de la frontière efficiente
 print(frontier)
 
 tailoredFrontierPlot(object = frontier) # tracé de la frontière efficiente
@@ -43,9 +45,9 @@ setTargetReturn(spec)=0.0012 #on peut augmenter le rendement objectif , cf résu
 
 weightsPlot(frontier,col= palette(rainbow(20))) # graphique permettant de voir les poids de chaque actifs pour chaque portefeuille de la frontière efficiente
 
-efficientPortfolio(rdt_journalier, spec,constraints) #  calcul le portefeuille optimal compte tenu du rendement objectif et des contraintes imposées
-tangencyPortfolio(rdt_journalier,spec,constraints) # calcul le portefeuille ayant le meilleur rapport rendement/risque de la frontière efficiente 
-
+efficientPortfolio(rdt_journalier_oat, spec,constraints) #  calcul le portefeuille optimal compte tenu du rendement objectif et des contraintes imposées
+tangencyPortfolio(rdt_journalier_oat,spec,constraints) # calcul le portefeuille ayant le meilleur rapport rendement/risque de la frontière efficiente (c-a-d le meilleur ratio de Sharpe)
+                                                       # on selectionne ce portefeuille pariculier
 # on peu également utiliser nos propres fonctions pour trouver les poids optimaux
 # d'après le graphe de la frontière efficiente, le meilleur rendement est 0.12%
 
@@ -96,7 +98,7 @@ frontierRETURN_VAR<-function(M){
   Var=c()
   rendement=c()
   
-  for (i in 1:dim(M)[2]) {Var=c(Var,f_var(M,i,0.95))
+  for (i in 1:dim(M)[2]) {Var=c(Var,f_var(M,i,0.05))
                           rendement=c(rendement,mean(M[,i]))
   }
   M=cbind(Var,rendement)
@@ -106,5 +108,17 @@ frontierRETURN_VAR<-function(M){
 #plot frontière efficiente Return-Var95%
 plot(frontierRETURN_VAR(rdt_effi)[,"Var"],frontierRETURN_VAR(rdt_effi)[,"rendement"],type="l",col="red",main=expression("Frontière efficiente rendement/Var95%"),ylab="rendement",xlab="Var95%"))
 
+#Frontière efficiente CVar-Mean
+
+spec1=portfolioSpec() # spécification du portefeuille
+setType(spec1)="CVaR" # on choisi un critère de minimisation de Cvar
+setAlpha(spec1)=0.05 # niveau de confiance de la Cvar
+setSolver(spec1)="solveRglpk" # l'optimisation de la Cvar est un pb linéaire --> on change de solveur
+constraints1=c("minW[1:6]=-999", "maxW[1:6]=+999")
+
+frontier_Cvar= portfolioFrontier(rdt_journalier_oat,spec1,constraints1) # calcul l'ensemble des points de la frontière efficiente
+print(frontier_Cvar)
+
+tailoredFrontierPlot(frontier_Cvar,risk = "CVaR") # tracé de la frontière efficiente Mean-Cvar
 
 
