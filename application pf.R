@@ -1,6 +1,7 @@
 source("D:/cours/2A/Statap/Scripts R/extraction data.r")
 source("D:/cours/2A/Statap/Scripts R/tests stats.r")
 source("D:/cours/2A/Statap/Scripts R/opti pf.r")
+#rajouter le fichier frontiere_efficiente en source
 
 titres_selec=c("orange","tf1","airliquide","alcatel-lucent","carrefour","kering","loreal","peugeot","thales","bnp","bouygues","soge","total","vinci","capgemini","OAT")
 titres_selec_oat=c("orange","tf1","airliquide","alcatel-lucent","carrefour","kering","loreal","peugeot","thales","bnp","bouygues","soge","total","vinci","capgemini")
@@ -39,7 +40,9 @@ portfolioConstraints(rdt_journalier_oat, spec,constraints) # description des con
 frontier <- portfolioFrontier(rdt_journalier_oat, spec,constraints) # calcul l'ensemble des points de la frontière efficiente
 print(frontier)
 
-tailoredFrontierPlot(object = frontier) # tracé de la frontière efficiente
+#tailoredFrontierPlot(object = frontier) # tracé de la frontière efficiente
+#ne pas oublier de mettre le fichier frontiere_efficiente en source
+frontiere_efficiente1(object = frontier) # tracé de la frontière efficiente
 
 setTargetReturn(spec)=0.0012 #on peut augmenter le rendement objectif , cf résultat frontier et frontière efficiente
 
