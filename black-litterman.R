@@ -1,7 +1,7 @@
 source("/Users/Bouxtehouve/Documents/ENSAE/2A/Projet Statapp/code/extraction data.r")
 #source("/Users/Bouxtehouve/Documents/ENSAE/2A/Projet Statapp/code/tests stats.r")
 source("/Users/Bouxtehouve/Documents/ENSAE/2A/Projet Statapp/code/opti pf.r")
-
+cat("\014")  
 #On dispose des donnees suivantes:
 # X vecteur des rendements
 # la matrice des corrélations historiques
@@ -91,12 +91,10 @@ m_kronecker <- function(v){
   # Le produit de Kronecker est associatif, cette fonction sert donc a calculer
   # le produit de 3 ou plus elements
   n <- length(v) # si n < 2 la fonction plante
-  print(v[1])
-  print(v[2])
-  y <- kronecker(v[1],v[2])
+  y <- souskro(v[1],v[2])
   if (n > 2){
     for (i in 3:n){
-      y <- kronecker(y,v[i])
+      y <- souskro(y,v[i])
     }
   }
   return(y)
@@ -106,11 +104,12 @@ coskewness <- function(X){
   # Renvoie la matrice de coskewness pour le portefeuille dont on a les rendements historiques X
   n <- ncol(X)
   T <- nrow(X)
-  skew <- array(dim = c(n,n*n))
+  skew <- array(data = 0, dim = c(n,n*n))
   sous_produit<-function(t){
     #Renvoie la matrice de coskewness pour une date t donnee
-    x <- X[t,] - t(colMeans(X))
-    return(m_kronecker(c(t(x),x,x)))
+    x <- t(as.numeric(X[t,] - t(colMeans(X))))
+    #return(m_kronecker(list(t(x),x,x)))
+    return(kronecker(kronecker(t(x),x),x))
   }
   for (t in 1:T){
     skew <- skew + sous_produit(t)
@@ -122,16 +121,16 @@ cokurtosis <- function(X){
   # Renvoie la matrice de cokurtosis pour le portefeuille dont on a les rendements historiques X
   n <- ncol(X)
   T <- nrow(X)
-  kur <- array(dim = c(n,n^3))
+  kur <- array(data = 0, dim = c(n,n^3))
   sous_produit<-function(t){
     #Renvoie la matrice de coskewness pour une date t donnee
-    x <- X[t,] - t(colMeans(X))
-    return(m_kronecker(c(t(x),x,x,x)))
+    x <- t(as.numeric(X[t,] - t(colMeans(X))))
+    return(kronecker(kronecker(kronecker(t(x),x),x),x))
   }
   for (t in 1:T){
-    skew <- skew + sous_produit(i)
+    kur <- kur + sous_produit(t)
   }
-  return(skew/T)
+  return(kur/T)
 }
 
 expected <- function(X,p,lambda, sigma){
@@ -141,15 +140,22 @@ expected <- function(X,p,lambda, sigma){
   w <- t(p)
   Rbarre <- colMeans(X) # Vecteur des rendements historiques moyens
   mu <- p%*%Rbarre
+  print(paste('mu: ', mu))
   sigmaw <- sigma%*%w
   mu2 <- p%*%sigmaw
-  omegaw <- coskewness(X)%*%m_kronecker(c(w,w))
+  print(paste('mu2: ',mu2))
+  omegaw <- coskewness(X)%*%kronecker(w,w)
   mu3 <- p%*%omegaw
-  psiw <- cokurtosis(X)%*%m_kronecker(c(w,w,w))
+  print(paste('mu3: ',mu3))
+  psiw <- cokurtosis(X)%*%kronecker(kronecker(w,w),w)
   mu4 <- p%*%psiw
-  mus <- c(mu,mu2,mu3,mu4)
+  print(paste('mu4:', mu4))
+  mus <- list(mu,mu2,mu3,mu4)
   A <- 1 + ((lambda^2)*mu2/2) - ((lambda^3)*mu3/6) + ((lambda^4)*mu4/24)
-  delta <-function(k){return((lambda^k)/(A*factorial(k)))}
+  print(paste('A:',A))
+  delta <-function(k){return(as.numeric((lambda^k)/(A*factorial(k))))}
+  print(delta(1))
+  print(dim(sigmaw))
   return(delta(1)*sigmaw - delta(2)*omegaw + delta(3)*psiw)
 }
 
@@ -181,4 +187,5 @@ fopt2<-function(Q,X,r) {
 
 poids_strat0=fopt2(SIGMA,colMeans(rdt_j),0.05) #poids du portefeuille stratégique calculé via la fonction fopt2
 moy_rdt_hist=t(poids_strat0)%*%colMeans(rdt_j) #rendement historique du portefeuille 
-lambda=(moy_rdt_hist-0.05)/(t(poids_strat0)%*%SIGMA%*%poids_strat0) #coefficient d'aversion au risque
+lambda=(moy_rdt_hist-0.012)/(t(poids_strat0)%*%SIGMA%*%poids_strat0) #coefficient d'aversion au risque
+mu <- expected(rdt_j,t(poids_strat0),lambda,SIGMA)
