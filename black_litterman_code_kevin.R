@@ -1,6 +1,6 @@
-source("/Users/dano/Desktop/KEKE_stat2/extraction data.r")
-source("/Users/dano/Desktop/KEKE_stat2/tests stats.r")
-source("/Users/dano/Desktop/KEKE_stat2/opti pf.r")
+source("/Users/dano/Desktop/essai victor/extraction data.r")
+source("/Users/dano/Desktop/essai victor/tests stats.r")
+source("/Users/dano/Desktop/essai victor/opti pf.r")
 
 
 titres_selec=c("orange","tf1","airliquide","alcatel-lucent","carrefour","kering","loreal","peugeot","thales","bnp","bouygues","soge","total","vinci","capgemini","OAT")
@@ -9,13 +9,13 @@ titres_selec_oat=c("orange","tf1","airliquide","alcatel-lucent","carrefour","ker
 datap_j = load_data("01/01/2003", "31/12/2006", titres = titres_selec, type = "J")
 datap_m = load_data("01/01/2003", "31/12/2006", titres = titres_selec, type = "M")
 
-rdt_j = rendements(datap_j)
-rdt_m = rendements(datap_m) 
+rdt_j = global_return(datap_j)
+rdt_j_a=rdt_j[,titres_selec_oat]
+#rdt_m = global_return(datap_m) 
 
 ######################## Black litterman ########################################################################
 
 library(forecast)
-library(rugarch)
 library(fGarch)
 
 ###################### FONCTIONS OPTIMISATIONS #######################################################################
@@ -35,13 +35,13 @@ fopt2<-function(Q,X,r) {
   
 }
 ####################### Première étape ###############################################################################
-
+#on a vu precedemment que l'on ne prend pas en compte l'actif sans risque dans notre portefeuille
 # Vector of implied excess return (rendement portefeuille stratégique)
+rf=mean(rdt_j[,"OAT"])
+SIGMA=cov(rdt_j_a) #matrice des covariances
 
-SIGMA=cov(rdt_j) #matrice des covariances
-
-poids_strat0=fopt2(SIGMA,colMeans(rdt_j),0.0012) #poids du portefeuille stratégique calculé via la fonction fopt2/ on fixe le rendement à r=0.012 (optimal selon la frontière efficiente)
-moy_rdt_hist=t(poids_strat0)%*%colMeans(rdt_j) #rendement historique du portefeuille 
+poids_strat0=fopt2(SIGMA,colMeans(rdt_j_a),0.0012) #poids du portefeuille stratégique calculé via la fonction fopt2/ on fixe le rendement à r=0.012 (optimal selon la frontière efficiente)
+moy_rdt_hist=t(poids_strat0)%*%colMeans(rdt_j_a) #rendement historique du portefeuille 
 lambda=(moy_rdt_hist-rf)/(t(poids_strat0)%*%SIGMA%*%poids_strat0) #coefficient d'aversion au risque
 
 ############################## FONCTIONS OPTIMISATIONS BLACK LITTERMAN ################################################
@@ -60,11 +60,11 @@ fopt_uc<-function(sigma,mu){
   B=t(v)%*%solve(sigma)%*%v
   gamma=(A-as.numeric(lambda))/B
   w=(1/as.numeric(lambda))*solve(sigma)%*%(mu-as.numeric(gamma)*v)
- return(w)
+  return(w)
 }
 ######################################################################################################################
 
-poids_strat1=fopt_uc(SIGMA,colMeans(rdt_j))
+poids_strat1=fopt_uc(SIGMA,colMeans(rdt_j_a))
 rdt_strat1=as.numeric(lambda)*(SIGMA%*%poids_strat1)
 mean(rdt_strat1)
 ######################### Deuxième étape #############################################################################
@@ -82,7 +82,7 @@ previsionARMA<-function(x) {
   return(mean(prev$mean)) # on retourne la moyenne des prévisions afin de construire le vecteur Q
 }
 
-Q=apply(rdt_j,2,"previsionARMA")  #construction du vecteur Q contenant nos previsions pr chaque actif
+Q=apply(rdt_j_a,2,"previsionARMA")  #construction du vecteur Q contenant nos previsions pr chaque actif
 summary(Q)
 
 
@@ -99,7 +99,7 @@ f_omega<-function(P,Sigma){
   return(omega)
 }
 
-OMEGA=f_omega(diag(16),cov(rdt_j))
+OMEGA=f_omega(diag(15),cov(rdt_j_a))
 
 # CF littérature , on fixe tau à 1 (Satchell et Scowcroft)
 tau=1
@@ -126,9 +126,9 @@ WBL2=fopt_uc(SIGMA,rdt_litterman)
 library(fUnitRoots)
 
 W=c()
-for (i in 1:dim(rdt_j)[2]) { 
+for (i in 1:dim(rdt_j_a)[2]) { 
   
-  if (PP.test(ts(rdt_j[,i]),lshort=TRUE)$p.value>0.05) {W=c(W,i)}
+  if (PP.test(ts(rdt_j_a[,i]),lshort=TRUE)$p.value>0.05) {W=c(W,i)}
   
 }
 W
@@ -139,25 +139,22 @@ W
 # modèle GARCH permettant d'avoir des previsions sur la volatilité
 # on postule des GARCH(1,1) pour chacune de nos actions (courant)
 
-# prévision à l'horizon m=60 envirron 2 mois
 previsionGARCH<-function(x){
   m=60
-  spec=ugarchspec()
-  modele=ugarchfit(spec,x)
-  prev=ugarchforecast(modele,n.ahead=m)
-  return(mean(fitted(prev)))
+  fit=garchFit(~garch(1, 1),x,trace = FALSE )
+  a=predict(fit,n.ahead=m)$meanForecast
+  return(mean(a))
 }
 
 volatiliteGARCH<-function(x){
   m=60
-  spec=ugarchspec()
-  modele=ugarchfit(spec,x)
-  prev=ugarchforecast(modele,n.ahead=m)
-  return(sigma(prev))
+  fit=garchFit(~garch(1, 1),x,trace = FALSE )
+  a=predict(fit,n.ahead=m)$standardDeviation
+  return(mean(a))
 }
 
 # Nouveau vecteur Q avec prev garch
-Q_garch=apply(rdt_j,2,"previsionGARCH")  #construction du vecteur Q contenant nos previsions pr chaque actif
+Q_garch=apply(rdt_j_a,2,"previsionGARCH") #construction du vecteur Q contenant nos previsions pr chaque actif (égale à la moyenne pour un GARCH)
 summary(Q_garch)
 
 # Matrice de niveau de confiance dans les vues Omega
@@ -171,21 +168,21 @@ f_omega_garch<-function(x){
   
 }
 
-omega_garch = f_omega_garch(rdt_j)
+omega_garch = f_omega_garch(rdt_j_a)
 
 
 # Construction de la matrice de variance anticipée
 # hypothèse: stabilité des corrélations dans le temps
 
 # Corrélations historiques
-rho_hist=cor(rdt_j)
+rho_hist=cor(rdt_j_a)
 # cf p13 WERLé 
 g=c() #vecteur qui contient les volatilités prédites de chaque actif
-for (i in 1:dim(rdt_j)[2]) {g=c(g,mean(volatiliteGARCH(rdt_j[,i])))}
-  
-SIGMA_forecast=matrix(0,dim(rdt_j)[2],dim(rdt_j)[2])
-for (i in 1:dim(rdt_j)[2]) {
-  for (j in 1:dim(rdt_j)[2]) {
+for (i in 1:dim(rdt_j_a)[2]) {g=c(g,mean(volatiliteGARCH(rdt_j_a[,i])))}
+
+SIGMA_forecast=matrix(0,dim(rdt_j_a)[2],dim(rdt_j_a)[2])
+for (i in 1:dim(rdt_j_a)[2]) {
+  for (j in 1:dim(rdt_j_a)[2]) {
     SIGMA_forecast[i,j]=rho_hist[i,j]*g[i]*g[j]
   }
 }
@@ -203,13 +200,14 @@ WBL2_garch=fopt_uc(SIGMA_forecast,rdt_litterman_garch) # tq la somme des poids v
 
 datap_j_2007=load_data("01/01/2007", "01/05/2007", titres = titres_selec, type = "J")
 rdt_j_2007 = rendements(datap_j_2007)
-SIGMA_2007=cov(rdt_j_2007)
+rdt_j_a_2007=rdt_j_2007[,titres_selec_oat]
+SIGMA_2007=cov(rdt_j_a_2007)
 
 # Rendements sur la période 2007
 
-rdt_strat_2007=t(poids_strat1)%*%colMeans(rdt_j_2007)
-rdt_arma_2007=t(WBL2)%*%colMeans(rdt_j_2007)
-rdt_garch_2007=t(WBL2_garch)%*%colMeans(rdt_j_2007)
+rdt_strat_2007=t(poids_strat1)%*%colMeans(rdt_j_a_2007)
+rdt_arma_2007=t(WBL2)%*%colMeans(rdt_j_a_2007)
+rdt_garch_2007=t(WBL2_garch)%*%colMeans(rdt_j_a_2007)
 
 # ratios de Sharpe
 
@@ -219,6 +217,6 @@ f_sharpe<-function(poids,rdt,r,sigma){
   return(a)
 }
 
-f_sharpe(poids_strat1,rdt_j_2007,mean(rdt_j_2007[,"OAT"]),SIGMA_2007)
-f_sharpe(WBL2,rdt_j_2007,mean(rdt_j_2007[,"OAT"]),SIGMA_2007)
-f_sharpe(WBL2_garch,rdt_j_2007,mean(rdt_j_2007[,"OAT"]),SIGMA_2007)
+f_sharpe(poids_strat1,rdt_j_a_2007,mean(rdt_j_2007[,"OAT"]),SIGMA_2007)
+f_sharpe(WBL2,rdt_j_a_2007,mean(rdt_j_2007[,"OAT"]),SIGMA_2007)
+f_sharpe(WBL2_garch,rdt_j_a_2007,mean(rdt_j_2007[,"OAT"]),SIGMA_2007)
