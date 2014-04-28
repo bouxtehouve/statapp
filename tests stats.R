@@ -41,6 +41,6 @@ f_var <- function(Y,i,alpha){
 
 # 3) CVaR
 f_cvar <- function(Y,i,alpha){
-  var=quantile(Y[,i],1-alpha)
+  var=quantile(Y[,i],alpha)
   return(sum(Y[,i]*(Y[,i]<var))/sum((Y[,i]<var)))
 }
