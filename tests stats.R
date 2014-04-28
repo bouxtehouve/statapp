@@ -36,7 +36,7 @@ f_sharpe <- function(Y,i,r){
 
 # 2) VaR
 f_var <- function(Y,i,alpha){
-  return(quantile(Y[,i],1-alpha))
+  return(quantile(Y[,i],alpha))
 }
 
 # 3) CVaR
