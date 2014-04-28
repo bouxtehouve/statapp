@@ -82,9 +82,10 @@ load_data <- function(deb, fin, titres = NULL, type = "J"){
   print("La taille de la table finale (avant suppression des lignes manquantes) est : ")
   print(dim(data))
   print(periode[,colSums(is.na(periode))<nrow(periode)])
-  if (!is.null(titres)) {
-    data = data[,titres]
-  }
+  data$Date <- NULL
+  #if (!is.null(titres)) {
+  #  data = data[,titres]
+  #}
   return(na.omit(data))
 }
 
