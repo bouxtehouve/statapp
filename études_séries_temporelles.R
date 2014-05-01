@@ -67,3 +67,4 @@ for (i in 1:dim(M1)[2]){
   if (jarque.bera.test(M1[,i])$p.value>0.05) {W3=c(W3,i)}
 }
 W3
+#conclusion: test de normalité rejeté
