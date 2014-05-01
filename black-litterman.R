@@ -182,7 +182,7 @@ expected_simple <- function(X,p,rf){
   #etant donnes le choix d'allocation et la var historique
   #NB: si p est historiquement optimal, la fonction renvoie meanreturn(X,p)
   #X, p et rf comme d'habitude, sigma matrice de covariance
-  return(r-av_coeff(X,p,rf)%*%sigma(X)%*%p)
+  return(r_av_coeff(X,p,rf)*sigma(X)%*%p)
 }
 
 f_wBL<-function(X,lambda,Er){
@@ -255,7 +255,7 @@ titres_selec_oat=c("orange","tf1","airliquide","alcatel-lucent","carrefour","ker
 
 datap_j = load_data("01/01/2003", "31/12/2006", titres = titres_selec, type = "J")
 rdt_j = rendements(datap_j)
-rdt_j = global_return(datap_j)
+#rdt_j = global_return(datap_j)
 rdt_j=rdt_j[,titres_selec_oat]
 ######################## Etape 4 : main.cpp ##############################################################################
 
@@ -302,7 +302,7 @@ main_bl <- function(){
   return(wBL_final)
 }
 
-trouver_coeff <- function(X,w, type_p = "garch", type_m = "normal"){
+trouver_coeff <- function(X, type_p = "arma", type_m = "normal"){
   p <- fopt2(sigma(X),colMeans(X),0.012)
   moy_rdt_hist=t(p)%*%colMeans(X) #rendement historique du portefeuille 
   lambda <- (moy_rdt_hist-0.0012)/(t(p)%*%sigma(X)%*%p)
@@ -314,7 +314,7 @@ trouver_coeff <- function(X,w, type_p = "garch", type_m = "normal"){
   }
   else if (type_p == "garch") {
     Q <- f_Q_garch(X)
-    omega <- f_omega(X)
+    omega <- f_omega_garch(X)
   }
   
   #Etape BL
