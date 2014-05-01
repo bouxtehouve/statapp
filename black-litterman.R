@@ -14,6 +14,21 @@ library(nleqslv)
 # la matrice omega donne les niveaux de confiance sur chaque vue
 
 ######################## Etape 0 : fonctions de base ( servent pour les 2 modeles) ##############################################################################
+fopt2<-function(Q,X,r) {
+  
+  n=length(X)
+  v1=numeric(n)+1
+  M=matrix(c(0,0,0,0),2,2)
+  
+  M[1,1]=t(X)%*%solve(Q)%*%X             #étape de calcul intermédiaire pour calculer les poids
+  M[1,2]=t(X)%*%solve(Q)%*%v1  
+  M[2,1]=t(v1)%*%solve(Q)%*%v1  
+  M[2,2]=M[1,1]*M[2,1]-M[1,2]^2  
+  
+  poids=((M[2,1]*r-M[1,2])/M[2,2])*solve(Q)%*%X +((M[1,1]-M[1,2]*r)/M[2,2])*solve(Q)%*%v1  #vecteur de poids
+  return(poids) 
+  
+}
 
 meanreturn <- function(X,p){
   # Renvoie le rendement historique moyen du portefeuille
@@ -84,14 +99,30 @@ coskewness_ant <- function(X,v_ant){
   #Renvoie la matrice de coskewness anticipee pour les volatilites anticipees (memes hypoth?ses de stationnarite que pour la matrice de variance anticipee)
   #X : rendements historiques
   # v_ant : vecteur de taille celle du portefeuille renvoyant les volatilites anticipees pour chaque actif
-  n <- length(v_ant)
-  skew_hist=skewness(X)
-  std <- apply(X,2,sd)
-  y <- matrix(0,n,n*n)
-  for (i in 1:n){
-    for (j in 1:(n*n)){
-      y[i,j] <- skew_hist[i,j]*v_ant[j%/%n]*v_ant[i]*v_ant(j%%n)/(std[j%/%n]*std[i]*std(j%%n))
+  decomposition <- function(a,b){
+    n <- max(3,floor(log(a,b)) +1) #Pour info, donne le nombre de chiffres dans la decomposition
+    y <- seq(1,1,length=n)
+    q <- a
+    i <- 1
+    while(q >0){
+      y[i] <- y[i]+q%%b
+      q <- q %/% b
+      i <- i+1
     }
+    return(y)
+  }
+  n <- length(v_ant)
+  skew_hist=coskewness(X)
+  std <- as.numeric(apply(X,2,sd))
+  y <- matrix(0,n,n*n)
+  for (I in 1:n){
+    for (J in 1:(n^2 -1)){
+      decomp <- decomposition(J,n)
+      k <- decomp[1]
+      i <- decomp[2]
+      y[I,J+1] <- skew_hist[I,J+1]*v_ant[I]*v_ant[i]*v_ant[k]/(std[I]*std[i]*std[k])
+    }
+  y[I,1] <- skew_hist[I,1]*v_ant[I]*v_ant[1]*v_ant[1]/(std[I]*std[1]*std[1])
   }
   return(y)
 }
@@ -118,7 +149,6 @@ cokurtosis_ant <- function(X,v_ant){
   decomposition <- function(a,b){
     n <- max(4,floor(log(a,b)) +1) #Pour info, donne le nombre de chiffres dans la decomposition
     y <- seq(1,1,length=n)
-    print(y)
     q <- a
     i <- 1
     while(q >0){
@@ -126,22 +156,21 @@ cokurtosis_ant <- function(X,v_ant){
       q <- q %/% b
       i <- i+1
     }
-    print(y)
     return(y)
   }
   n <- length(v_ant)
-  kur_hist=kurtosis(X)
+  kur_hist=cokurtosis(X)
   std <- apply(X,2,sd)
   y <- matrix(0,n,n^3)
-  for (i in 1:n){
+  for (I in 1:n){
     for (J in 1:((n^3)-1)){
       decomp <- decomposition(J,n)
       l <- decomp[1]
       j <- decomp[2]
       k <- decomp[3]
-      y[i,j+1] <- (kur_hist[i,j+1]*v_ant[i]*v_ant[j]*v_ant[k]*v_ant[l])/(kur_hist[i,j+1]*std[i]*std[j]*std[k]*std[l])  
+      y[I,J+1] <- (kur_hist[I,J+1]*v_ant[I]*v_ant[j]*v_ant[k]*v_ant[l])/(std[I]*std[j]*std[k]*std[l])  
     }
-    y[i,1] <- kur_hist[i,1]*std[i]*std[1]*std[1]*std[1]
+    y[I,1] <- kur_hist[I,1]*v_ant[I]*v_ant[1]*v_ant[1]*v_ant[1]/(std[I]*std[1]*std[1]*std[1])
   }
   return(y)
 }
@@ -177,57 +206,43 @@ f_wBL_somme1<-function(X,lambda,Er){
 
 ######################## Etape 2 : modele de B-L etendu aux moments d'ordre 2 et 3 ##############################################################################
 
-expected <- function(X,p,lambda){
+expected_ext <- function(X,p,lambda){
   # Renvoie le rendement espere etant donne X et p 
   # en integrant les moments d'ordre superieur
   # lambda est le coeff d'aversion au risque
   w <- t(p)
   Rbarre <- colMeans(X) # Vecteur des rendements historiques moyens
   mu <- p%*%Rbarre
-  print(paste('mu: ', mu))
   sigmaw <- sigma(X)%*%w
   mu2 <- p%*%sigmaw
-  print(paste('mu2: ',mu2))
   omegaw <- coskewness(X)%*%kronecker(w,w)
   mu3 <- p%*%omegaw
-  print(paste('mu3: ',mu3))
   psiw <- cokurtosis(X)%*%kronecker(kronecker(w,w),w)
   mu4 <- p%*%psiw
-  print(paste('mu4:', mu4))
   mus <- list(mu,mu2,mu3,mu4)
   A <- 1 + ((lambda^2)*mu2/2) - ((lambda^3)*mu3/6) + ((lambda^4)*mu4/24)
-  print(paste('A:',A))
   delta <-function(k){return(as.numeric((lambda^k)/(A*factorial(k))))}
-  print(delta(1))
-  print(dim(sigmaw))
   return(delta(1)*sigmaw - delta(2)*omegaw + delta(3)*psiw)
 }
 
 f_wBL_ext <- function(X,Er,lambda,w0){
   # Renvoie le portefeuille p de BL apres la premiere etape
   # w0 sert de root pour la resolution du probleme d'inversion, on aimerait prendre le wbl original par exemple
-  v_ant <- volatiliteGARCH(X)
   expected_ant <- function(w){
     # Meme fonction que expected mais avec les valeurs anticipees
+    v_ant <- apply(rdt_j,2,"volatiliteGARCH")
     p <- t(w)
     Rbarre <- colMeans(X) # Vecteur des rendements historiques moyens
     mu <- p%*%Rbarre
-    print(paste('mu: ', mu))
     sigmaw <- sigma_ant(X,v_ant)%*%w
     mu2 <- p%*%sigmaw
-    print(paste('mu2: ',mu2))
-    omegaw <- coskewness_ant(X,v_ant)%*%kronecker(w,w)
+    omegaw <- (coskewness_ant(X,v_ant))%*%kronecker(w,w)
     mu3 <- p%*%omegaw
-    print(paste('mu3: ',mu3))
     psiw <- cokurtosis_ant(X,v_ant)%*%kronecker(kronecker(w,w),w)
     mu4 <- p%*%psiw
-    print(paste('mu4:', mu4))
     mus <- list(mu,mu2,mu3,mu4)
     A <- 1 + ((lambda^2)*mu2/2) - ((lambda^3)*mu3/6) + ((lambda^4)*mu4/24)
-    print(paste('A:',A))
     delta <-function(k){return(as.numeric((lambda^k)/(A*factorial(k))))}
-    print(delta(1))
-    print(dim(sigmaw))
     return(delta(1)*sigmaw - delta(2)*omegaw + delta(3)*psiw - Er)
   }
   # On calcule ensuite les poids w qui verifient expected_ant(w) = Er grace au package nleqslv
@@ -268,15 +283,54 @@ main_bl <- function(){
     
   }
   
-  poids_strat0 <- fopt2(sigma,colMeans(rdt_j),0.0012) #poids du portefeuille stratégique calculé via la fonction fopt2
+  poids_strat0 <- fopt2(sigma,colMeans(rdt_j),0.012) #poids du portefeuille stratégique calculé via la fonction fopt2
   moy_rdt_hist=t(poids_strat0)%*%colMeans(rdt_j) #rendement historique du portefeuille 
   lambda <- (moy_rdt_hist-0.0012)/(t(poids_strat0)%*%sigma%*%poids_strat0) #coefficient d'aversion au risque
-  mu <- expected(rdt_j,t(poids_strat0),lambda)
+  mu <- expected_ext(rdt_j,t(poids_strat0),lambda)
   P <- f_P(rdt_j)
   Q <- f_Q_garch(rdt_j)
   omega <- f_omega_garch(rdt_j)
   Er <- f_Er(rdt_j,1,mu,P,Q,omega)
   w0 <- f_wBL_somme1(rdt_j,lambda,Er)
+  print('w0')
+  print(w0)
+  print(sum(w0))
+  print('Er')
+  print(Er)
   wBL_final <- f_wBL_ext(rdt_j,Er,lambda,w0)
-  print(wBL_final)
+  cat("\014")
+  return(wBL_final)
+}
+
+trouver_coeff <- function(X,w, type_p = "garch", type_m = "normal"){
+  p <- fopt2(sigma(X),colMeans(X),0.012)
+  moy_rdt_hist=t(p)%*%colMeans(X) #rendement historique du portefeuille 
+  lambda <- (moy_rdt_hist-0.0012)/(t(p)%*%sigma(X)%*%p)
+  # Etape de prevision
+  P <- f_P(X)
+  if (type_p == "arma"){
+    Q <- f_Q(X)
+    omega <- f_omega(X,P)
+  }
+  else if (type_p == "garch") {
+    Q <- f_Q_garch(X)
+    omega <- f_omega(X)
+  }
+  
+  #Etape BL
+  if (type_m == "normal"){
+    mu <- expected_simple(X,p,0.012)
+    Er <- f_Er(X,1,mu,P,Q,omega)
+    return(f_wBL_somme1(X,lambda,Er))
+  }
+  else if (type_m == "etendu"){
+    mu <- expected_ext(X,t(p),lambda)
+    Er <- f_Er(X,1,mu,P,Q,omega)
+    w0 <- f_wBL_somme1(X,lambda,Er)
+    return(f_wBL_ext(X,Er,lambda,w0))
+  }
+}
+
+puissance_portefeuille <- function(X, w, date1 = "01/01/2007", date2 = "01/05/2007"){
+  return(t(w)%*%colMeans(X))
 }

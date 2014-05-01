@@ -53,14 +53,14 @@ perron_phillips <- function(X){
 # modele GARCH permettant d'avoir des previsions sur la volatilite
 # on postule des GARCH(1,1) pour chacune de nos actions (courant)
 
-previsionGARCH <-function(X, m = 60){
-  fit=garchFit(~garch(1, 1),X,trace = FALSE )
+previsionGARCH <-function(x, m = 60){
+  fit=garchFit(~garch(1, 1),x,trace = FALSE )
   a=predict(fit,n.ahead=m)$meanForecast
   return(mean(a))
 }
 
-volatiliteGARCH <-function(X, m = 60){
-  fit=garchFit(~garch(1, 1),X,trace = FALSE )
+volatiliteGARCH <-function(x, m = 60){
+  fit=garchFit(~garch(1, 1),x,trace = FALSE )
   a=predict(fit,n.ahead=m)$standardDeviation
   return(mean(a))
 }
