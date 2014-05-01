@@ -17,7 +17,7 @@ periode <- function(data){
 
 load_data <- function(deb, fin, titres = NULL, type = "J"){
   # le path est ? changer selon chaque utilisateur
-  path_data="C:/Users/Yann/Desktop/2A/Statap/Data/Cours/"
+  path_data="/Users/Bouxtehouve/Documents/ENSAE/2A/Projet Statapp/Cours/"
   path_data=paste(path_data,type,"/",sep="")
   
   # on s?lectionne les fichiers contenus dans le dossier indiqu?
@@ -108,12 +108,12 @@ rendements <- function(data) {
   return(Y)
 }
 
-# 3) Calcul des rendements journaliers actualisés des OAT et agrégat avec les rendements classiques de ci-dessus
+# 3) Calcul des rendements journaliers actualis?s des OAT et agr?gat avec les rendements classiques de ci-dessus
 global_return<-function(data,type="J"){
   actu=365
   if (type=="M"){actu=12}
-  d=(1+datap_j[,"OAT"]/100)^(1/(10*actu))-1
+  d=(1+datap_j[,"oat"]/100)^(1/(10*actu))-1
   Y=rendements(data)
-  Y[,'OAT']=d
+  Y[,'oat']=d
   return(Y)
 }
