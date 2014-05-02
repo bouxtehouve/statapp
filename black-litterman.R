@@ -14,7 +14,7 @@ library(nleqslv)
 # la matrice omega donne les niveaux de confiance sur chaque vue
 
 ######################## Etape 0 : fonctions de base ( servent pour les 2 modeles) ##############################################################################
-fopt2<-function(Q,X,r) {
+fopt2<-function(Q,X,r = 0.012) {
   
   n=length(X)
   v1=numeric(n)+1
@@ -254,26 +254,28 @@ f_wBL_ext <- function(X,Er,lambda,w0){
 }
 
 ######################## Etape 3 : Pour tester la performance d'un portefeuille ##############################################################################
-titres_selec=c("orange","tf1","airliquide","alcatel-lucent","carrefour","kering","loreal","peugeot","thales","bnp","bouygues","soge","total","vinci","capgemini","OAT")
+titres_selec=c("orange","tf1","airliquide","alcatel-lucent","carrefour","kering","loreal","peugeot","thales","bnp","bouygues","soge","total","vinci","capgemini","oat")
 titres_selec_oat=c("orange","tf1","airliquide","alcatel-lucent","carrefour","kering","loreal","peugeot","thales","bnp","bouygues","soge","total","vinci","capgemini")
 
 # Pour calibrer le portefeuille
 datap_j = load_data("01/01/2003", "31/12/2006", titres = titres_selec, type = "J")
-rdt_j = rendements(datap_j)
-#rdt_j = global_return(datap_j)
+#rdt_j = rendements(datap_j)
+rdt_j = global_return(datap_j)
+rf <- mean(rdt_j[,"oat"])
 rdt_j=rdt_j[,titres_selec_oat]
 
 # Pour tester le portefeuille
 datap_j_2007 <- load_data("01/01/2007", "01/05/2007", titres = titres_selec, type = "J")
-rdt_j_2007 = rendements(datap_j_2007)
-#rdt_j_2007 = global_return(datap_j_2007)
+#rdt_j_2007 = rendements(datap_j_2007)
+rdt_j_2007 = global_return(datap_j_2007)
+rf_2007 <- mean(rdt_j_2007[,"oat"])
 rdt_j_2007=rdt_j_2007[,titres_selec_oat]
 
-trouver_coeff <- function(X, type_p = "arma", type_m = "normal"){
+trouver_coeff <- function(X, rf, type_p = "arma", type_m = "normal"){
   # Resume tout le processus fait jusqu'ici avec possibilite de choisir entre les 4 modeles
-  p <- fopt2(sigma(X),colMeans(X),0.012)
+  p <- fopt2(sigma(X),colMeans(X))
   moy_rdt_hist=t(p)%*%colMeans(X) #rendement historique du portefeuille 
-  lambda <- (moy_rdt_hist-0.0012)/(t(p)%*%sigma(X)%*%p)
+  lambda <- (moy_rdt_hist-rf)/(t(p)%*%sigma(X)%*%p)
   # Etape de prevision
   P <- f_P(X)
   if (type_p == "arma"){
@@ -287,7 +289,7 @@ trouver_coeff <- function(X, type_p = "arma", type_m = "normal"){
   
   #Etape BL
   if (type_m == "normal"){
-    mu <- expected_simple(X,p,0.012)
+    mu <- expected_simple(X,p,rf)
     Er <- f_Er(X,1,mu,P,Q,omega)
     return(f_wBL_somme1(X,lambda,Er))
   }
@@ -300,7 +302,7 @@ trouver_coeff <- function(X, type_p = "arma", type_m = "normal"){
   }
 }
 
-puissance_portefeuille <- function(X, w, rf = 0.012){
+puissance_portefeuille <- function(X, w, rf){
   # Sert a tester la puissance du portefeuille w sur une periode donnee par X
   # Attention : w est un vecteur ligne
   w <- as.numeric(w)
@@ -314,5 +316,11 @@ puissance_portefeuille <- function(X, w, rf = 0.012){
 }
 
 # Exemple d'utilisation :
-#w_ext_arma <- trouver_coeff(rdt_j, type_p = "arma", type_m = "etendu")
-#puissance_portefeuille(rdt_j_2007, w_ext_arma)
+w_nor_arma <- trouver_coeff(rdt_j, rf, type_p = "arma", type_m = "normal")
+w_nor_garch <- trouver_coeff(rdt_j, rf, type_p = "garch", type_m = "normal")
+w_ext_arma <- trouver_coeff(rdt_j, rf, type_p = "arma", type_m = "etendu")
+w_ext_garch <- trouver_coeff(rdt_j, rf, type_p = "garch", type_m = "etendu")
+puissance_portefeuille(rdt_j_2007, w_nor_arma, rf_2007)
+puissance_portefeuille(rdt_j_2007, w_nor_garch, rf_2007)
+puissance_portefeuille(rdt_j_2007, w_ext_arma, rf_2007)
+puissance_portefeuille(rdt_j_2007, w_ext_garch, rf_2007)
