@@ -33,7 +33,11 @@ fopt2<-function(Q,X,r = 0.012) {
 meanreturn <- function(X,p){
   # Renvoie le rendement historique moyen du portefeuille
   #X est le vecteur des rendements des actifs du portefeuille, p le vecteur des poids attribués
-  p%*%colMeans(X)
+  somme = 0
+  for (i in 1:length(p)){
+    somme = somme + mean(X[,i])*p[i]
+  }
+  return(somme)
 }
 
 volatility <- function(X,p){
@@ -191,7 +195,8 @@ f_wBL<-function(X,lambda,Er){
 f_wBL_somme1<-function(X,lambda,Er){
   # Renvoie l'allocation optimale (B-L avec somme des poids valant 1)
   m=length(Er)
-  sigma <- sigma(X)
+  v_ant <- apply(X,2,"volatiliteGARCH")
+  sigma <- sigma_ant(X,v_ant)
   v=numeric(m)+1
   A=t(v)%*%solve(sigma)%*%Er
   B=t(v)%*%solve(sigma)%*%v
@@ -218,7 +223,7 @@ expected_ext <- function(X,p,lambda){
   mus <- list(mu,mu2,mu3,mu4)
   A <- 1 + ((lambda^2)*mu2/2) - ((lambda^3)*mu3/6) + ((lambda^4)*mu4/24)
   delta <-function(k){return(as.numeric((lambda^k)/(A*factorial(k))))}
-  return(delta(1)*sigmaw - delta(2)*omegaw + delta(3)*psiw)
+  return(delta(1)*sigmaw + delta(2)*omegaw + delta(3)*psiw)
 }
 
 f_wBL_ext <- function(X,Er,lambda,w0){
@@ -227,7 +232,7 @@ f_wBL_ext <- function(X,Er,lambda,w0){
   expected_ant <- function(w){
     # Meme fonction que expected mais avec les valeurs anticipees
     # J'ajoute la contrainte "somme des poids = 1" ici
-    v_ant <- apply(rdt_j,2,"volatiliteGARCH")
+    v_ant <- apply(X,2,"volatiliteGARCH")
     wprime <- w[2:length(w)]
     p <- t(wprime)
     Rbarre <- colMeans(X) # Vecteur des rendements historiques moyens
@@ -242,7 +247,7 @@ f_wBL_ext <- function(X,Er,lambda,w0){
     A <- 1 + ((lambda^2)*mu2/2) - ((lambda^3)*mu3/6) + ((lambda^4)*mu4/24)
     delta <-function(k){return(as.numeric((lambda^k)/(A*factorial(k))))}
     y <- matrix(1-sum(wprime),length(wprime)+1,1)
-    y[2:nrow(y),1] <- delta(1)*sigmaw - delta(2)*omegaw + delta(3)*psiw - Er
+    y[2:nrow(y),1] <- delta(1)*sigmaw + delta(2)*omegaw + delta(3)*psiw - Er
     return(y)
   }
   # On calcule ensuite les poids w qui verifient expected_ant(w) = Er grace au package nleqslv
@@ -314,9 +319,9 @@ puissance_portefeuille <- function(X, w, rf){
 # Exemple d'utilisation :
 w_nor_arma <- trouver_coeff(rdt_j, rf, type_p = "arma", type_m = "normal")
 w_nor_garch <- trouver_coeff(rdt_j, rf, type_p = "garch", type_m = "normal")
-w_ext_arma <- trouver_coeff(rdt_j, rf, type_p = "arma", type_m = "etendu")
+#w_ext_arma <- trouver_coeff(rdt_j, rf, type_p = "arma", type_m = "etendu")
 w_ext_garch <- trouver_coeff(rdt_j, rf, type_p = "garch", type_m = "etendu")
 puissance_portefeuille(rdt_j_2007, w_nor_arma, rf_2007)
 puissance_portefeuille(rdt_j_2007, w_nor_garch, rf_2007)
-puissance_portefeuille(rdt_j_2007, w_ext_arma, rf_2007)
-puissance_portefeuille(rdt_j_2007, w_ext_garch, rf_2007)
+#puissance_portefeuille(rdt_j_2007, w_ext_arma, rf_2007)
+puissance_portefeuille(rdt_j_2007, w_ext_garch, rf_2007) 
