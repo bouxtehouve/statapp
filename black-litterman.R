@@ -230,20 +230,24 @@ f_wBL_ext <- function(X,Er,lambda,w0){
   # w0 sert de root pour la resolution du probleme d'inversion, on aimerait prendre le wbl original par exemple
   expected_ant <- function(w){
     # Meme fonction que expected mais avec les valeurs anticipees
+    # J'ajoute la contrainte "somme des poids = 1" ici
     v_ant <- apply(rdt_j,2,"volatiliteGARCH")
-    p <- t(w)
+    wprime <- w[2:length(w)]
+    p <- t(wprime)
     Rbarre <- colMeans(X) # Vecteur des rendements historiques moyens
     mu <- p%*%Rbarre
-    sigmaw <- sigma_ant(X,v_ant)%*%w
+    sigmaw <- sigma_ant(X,v_ant)%*%wprime
     mu2 <- p%*%sigmaw
-    omegaw <- (coskewness_ant(X,v_ant))%*%kronecker(w,w)
+    omegaw <- (coskewness_ant(X,v_ant))%*%kronecker(wprime,wprime)
     mu3 <- p%*%omegaw
-    psiw <- cokurtosis_ant(X,v_ant)%*%kronecker(kronecker(w,w),w)
+    psiw <- cokurtosis_ant(X,v_ant)%*%kronecker(kronecker(wprime,wprime),wprime)
     mu4 <- p%*%psiw
     mus <- list(mu,mu2,mu3,mu4)
     A <- 1 + ((lambda^2)*mu2/2) - ((lambda^3)*mu3/6) + ((lambda^4)*mu4/24)
     delta <-function(k){return(as.numeric((lambda^k)/(A*factorial(k))))}
-    return(delta(1)*sigmaw - delta(2)*omegaw + delta(3)*psiw - Er)
+    y <- matrix(1-sum(wprime),length(wprime)+1,1)
+    y[2:nrow(y),1] <- delta(1)*sigmaw - delta(2)*omegaw + delta(3)*psiw - Er
+    return(y)
   }
   # On calcule ensuite les poids w qui verifient expected_ant(w) = Er grace au package nleqslv
   return(nleqslv(w0,expected_ant)$x)
@@ -290,8 +294,9 @@ trouver_coeff <- function(X, type_p = "arma", type_m = "normal"){
   else if (type_m == "etendu"){
     mu <- expected_ext(X,t(p),lambda)
     Er <- f_Er(X,1,mu,P,Q,omega)
-    w0 <- f_wBL_somme1(X,lambda,Er)
-    return(f_wBL_ext(X,Er,lambda,w0))
+    w0 <- c(0,f_wBL_somme1(X,lambda,Er))
+    y <- f_wBL_ext(X,Er,lambda,w0)
+    return(y[2:length(y)]) # Le premier est la contrainte
   }
 }
 
@@ -309,5 +314,5 @@ puissance_portefeuille <- function(X, w, rf = 0.012){
 }
 
 # Exemple d'utilisation :
-w_ext_arma <- trouver_coeff(rdt_j, type_p = "arma", type_m = "etendu")
-puissance_portefeuille(rdt_j_2007, w_ext_arma)
+#w_ext_arma <- trouver_coeff(rdt_j, type_p = "arma", type_m = "etendu")
+#puissance_portefeuille(rdt_j_2007, w_ext_arma)
