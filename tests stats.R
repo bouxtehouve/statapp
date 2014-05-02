@@ -39,6 +39,13 @@ f_var <- function(Y,alpha){
   return(quantile(Y,alpha))
 }
 
+# 2bis) VaR approximée de Cornish Fisher
+f_var_cf <- function(Y,alpha,T=1){
+  q=qnorm(alpha)
+  qcf=q+skewness(Y)*(q^-1)/6+kurtosis(Y)*(q^3-3*q)/24-skewness(Y)^2*(2*q^3-5*q)/36
+  return(T*mean(Y)+qcf*sqrt(T*var(Y)))
+}
+
 # 3) CVaR
 f_cvar <- function(Y,alpha){
   var=quantile(Y,alpha)
