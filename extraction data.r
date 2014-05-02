@@ -17,7 +17,7 @@ periode <- function(data){
 
 load_data <- function(deb, fin, titres = NULL, type = "J"){
   # le path est ? changer selon chaque utilisateur
-  path_data="/Users/Bouxtehouve/Documents/ENSAE/2A/Projet Statapp/Cours/"
+  path_data="D:/cours/2A/Statap/Data/Cours/"
   path_data=paste(path_data,type,"/",sep="")
   
   # on s?lectionne les fichiers contenus dans le dossier indiqu?
@@ -45,21 +45,21 @@ load_data <- function(deb, fin, titres = NULL, type = "J"){
     return(data)
   }
   
-  file=paste(path_data,files[1],sep="")
+  file=paste(path_data,paste(paste(titres[1],"j",sep=" "),"csv",sep="."),sep="")
   
   # on lit les tableaux via read
   data <- read.csv(file,sep=";",header=TRUE)
   data = data[,c("Date","Close")]
   data[,"Date"] = sapply(data[,"Date"], function(x){as.date(as.character(x),order = "dmy")})
   data = selection(data)
-  colnames(data)[2] <- substring(files[1],1,nchar(files[1])-6)
+  colnames(data)[2] <- titres[1]
   
   periode = array(dim = c(3,46))
   periode[1,1] = colnames(data)[2]
   periode[2:3,1] = periode(data)
   
   for (i in 2:length(files)){
-    if (files2[i] %in% titres){
+    if (files2[i] %in% titres[2:length(titres)]){
       file=paste(path_data,files[i],sep="")
       temp <-read.csv(file,sep=";",header=TRUE)
       temp = temp[,c("Date","Close")]
