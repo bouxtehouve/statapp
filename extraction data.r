@@ -112,8 +112,8 @@ rendements <- function(data) {
 global_return<-function(data,type="J"){
   actu=365
   if (type=="M"){actu=12}
-  d=(1+datap_j[,"oat"]/100)^(1/(10*actu))-1
-  Y=rendements(data)
-  Y[,'oat']=d
+  d=(1+data[,"oat"]/100)^(1/(10*actu))-1
+  Y <- rendements(data)
+  Y[,'oat'] <- d
   return(Y)
 }
