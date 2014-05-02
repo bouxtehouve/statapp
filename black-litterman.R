@@ -33,11 +33,7 @@ fopt2<-function(Q,X,r = 0.012) {
 meanreturn <- function(X,p){
   # Renvoie le rendement historique moyen du portefeuille
   #X est le vecteur des rendements des actifs du portefeuille, p le vecteur des poids attribués
-  somme = 0
-  for (i in 1:length(p)){
-    somme = somme + mean(X[,i])*p[i]
-  }
-  return(somme)
+  p%*%colMeans(X)
 }
 
 volatility <- function(X,p){

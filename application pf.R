@@ -5,7 +5,7 @@ source("C:/Users/Yann/Documents/GitHub/statapp/black_litterman_code_kevin.r")
 source("C:/Users/Yann/Documents/GitHub/statapp/black-litterman.r")
 source("C:/Users/Yann/Documents/GitHub/statapp/frontiere_efficiente.r")
 
-titres_selec=c("orange","tf1","airliquide","alcatel-lucent","carrefour","kering","loreal","peugeot","thales","bnp","bouygues","soge","total","vinci","capgemini","OAT")
+titres_selec=c("orange","tf1","airliquide","alcatel-lucent","carrefour","kering","loreal","peugeot","thales","bnp","bouygues","soge","total","vinci","capgemini","oat","cac40")
 titres_selec_oat=c("orange","tf1","airliquide","alcatel-lucent","carrefour","kering","loreal","peugeot","thales","bnp","bouygues","soge","total","vinci","capgemini")
 
 datap_j = load_data("01/01/2003", "31/12/2006", titres = titres_selec, type = "J")

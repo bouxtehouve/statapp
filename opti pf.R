@@ -64,13 +64,3 @@ fronteffi<-function(Q,X,rf) {
   plot(y1,x,col="red",type="l",xlab="rendement",ylab="volatilité",main="Frontière efficiente")
   lines(y2,x,type="l",col="blue")
 }
-
-
-# 4) calcul esperance d'un portefeuille P (P est un vecteur des poids associés à chaque actif du portefeuille)
-
-f_esp <- function(data,P){
-  M=P*colMeans(data)
-  n=0
-  for (i in 1:length(P)){if (P[i]>0) n=n+1}
-  return(sum(M)/n)
-}

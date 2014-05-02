@@ -2,12 +2,10 @@ source("/Users/dano/Desktop/essai victor/extraction data.r")
 source("/Users/dano/Desktop/essai victor/tests stats.r")
 source("/Users/dano/Desktop/essai victor/opti pf.r")
 
-
-titres_selec=c("orange","tf1","airliquide","alcatel-lucent","carrefour","kering","loreal","peugeot","thales","bnp","bouygues","soge","total","vinci","capgemini","OAT")
+titres_selec=c("orange","tf1","airliquide","alcatel-lucent","carrefour","kering","loreal","peugeot","thales","bnp","bouygues","soge","total","vinci","capgemini","oat","cac40")
 titres_selec_oat=c("orange","tf1","airliquide","alcatel-lucent","carrefour","kering","loreal","peugeot","thales","bnp","bouygues","soge","total","vinci","capgemini")
 
 datap_j = load_data("01/01/2003", "31/12/2006", titres = titres_selec, type = "J")
-datap_m = load_data("01/01/2003", "31/12/2006", titres = titres_selec, type = "M")
 
 rdt_j = global_return(datap_j)
 rdt_j_a=rdt_j[,titres_selec_oat]
