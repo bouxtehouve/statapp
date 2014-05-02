@@ -253,56 +253,20 @@ f_wBL_ext <- function(X,Er,lambda,w0){
 titres_selec=c("orange","tf1","airliquide","alcatel-lucent","carrefour","kering","loreal","peugeot","thales","bnp","bouygues","soge","total","vinci","capgemini","OAT")
 titres_selec_oat=c("orange","tf1","airliquide","alcatel-lucent","carrefour","kering","loreal","peugeot","thales","bnp","bouygues","soge","total","vinci","capgemini")
 
+# Pour calibrer le portefeuille
 datap_j = load_data("01/01/2003", "31/12/2006", titres = titres_selec, type = "J")
 rdt_j = rendements(datap_j)
 #rdt_j = global_return(datap_j)
 rdt_j=rdt_j[,titres_selec_oat]
-######################## Etape 4 : main.cpp ##############################################################################
 
-main_bl <- function(){
-  titres_selec=c("orange","tf1","airliquide","alcatel-lucent","carrefour","kering","loreal","peugeot","thales","bnp","bouygues","soge","total","vinci","capgemini","OAT")
-  titres_selec_oat=c("orange","tf1","airliquide","alcatel-lucent","carrefour","kering","loreal","peugeot","thales","bnp","bouygues","soge","total","vinci","capgemini")
-  
-  #datap_j = load_data("01/01/2003", "31/12/2006", titres = titres_selec, type = "J")
-  #rdt_j = rendements(datap_j)
-  
-  sigma<- sigma(rdt_j) #matrice des covariances
-  fopt2<-function(Q,X,r) {
-    
-    n=length(X)
-    v1=numeric(n)+1
-    M=matrix(c(0,0,0,0),2,2)
-    
-    M[1,1]=t(X)%*%solve(Q)%*%X             #étape de calcul intermédiaire pour calculer les poids
-    M[1,2]=t(X)%*%solve(Q)%*%v1  
-    M[2,1]=t(v1)%*%solve(Q)%*%v1  
-    M[2,2]=M[1,1]*M[2,1]-M[1,2]^2  
-    
-    poids=((M[2,1]*r-M[1,2])/M[2,2])*solve(Q)%*%X +((M[1,1]-M[1,2]*r)/M[2,2])*solve(Q)%*%v1  #vecteur de poids
-    return(poids) 
-    
-  }
-  
-  poids_strat0 <- fopt2(sigma,colMeans(rdt_j),0.012) #poids du portefeuille stratégique calculé via la fonction fopt2
-  moy_rdt_hist=t(poids_strat0)%*%colMeans(rdt_j) #rendement historique du portefeuille 
-  lambda <- (moy_rdt_hist-0.0012)/(t(poids_strat0)%*%sigma%*%poids_strat0) #coefficient d'aversion au risque
-  mu <- expected_ext(rdt_j,t(poids_strat0),lambda)
-  P <- f_P(rdt_j)
-  Q <- f_Q_garch(rdt_j)
-  omega <- f_omega_garch(rdt_j)
-  Er <- f_Er(rdt_j,1,mu,P,Q,omega)
-  w0 <- f_wBL_somme1(rdt_j,lambda,Er)
-  print('w0')
-  print(w0)
-  print(sum(w0))
-  print('Er')
-  print(Er)
-  wBL_final <- f_wBL_ext(rdt_j,Er,lambda,w0)
-  cat("\014")
-  return(wBL_final)
-}
+# Pour tester le portefeuille
+datap_j_2007 <- load_data("01/01/2007", "01/05/2007", titres = titres_selec, type = "J")
+rdt_j_2007 = rendements(datap_j_2007)
+#rdt_j_2007 = global_return(datap_j_2007)
+rdt_j_2007=rdt_j_2007[,titres_selec_oat]
 
 trouver_coeff <- function(X, type_p = "arma", type_m = "normal"){
+  # Resume tout le processus fait jusqu'ici avec possibilite de choisir entre les 4 modeles
   p <- fopt2(sigma(X),colMeans(X),0.012)
   moy_rdt_hist=t(p)%*%colMeans(X) #rendement historique du portefeuille 
   lambda <- (moy_rdt_hist-0.0012)/(t(p)%*%sigma(X)%*%p)
@@ -331,6 +295,19 @@ trouver_coeff <- function(X, type_p = "arma", type_m = "normal"){
   }
 }
 
-puissance_portefeuille <- function(X, w, date1 = "01/01/2007", date2 = "01/05/2007"){
-  return(t(w)%*%colMeans(X))
+puissance_portefeuille <- function(X, w, rf = 0.012){
+  # Sert a tester la puissance du portefeuille w sur une periode donnee par X
+  # Attention : w est un vecteur ligne
+  w <- as.numeric(w)
+  f_sharpe<-function(){  
+    # rf rendement de l'actif sans risque
+    sigma <- sigma(X)
+    return(t(w)%*%colMeans(X)-rf)/sqrt(t(w)%*%sigma%*%w)
+  }
+  print(paste('Le rendement sur la periode est:',t(w)%*%colMeans(X)))
+  print(paste('Le ratio de Sharpe est:',f_sharpe()))
 }
+
+# Exemple d'utilisation :
+w_ext_arma <- trouver_coeff(rdt_j, type_p = "arma", type_m = "etendu")
+puissance_portefeuille(rdt_j_2007, w_ext_arma)
