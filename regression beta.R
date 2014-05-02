@@ -1,12 +1,14 @@
 ## Etude du coefficient beta issu de la régression linéaire du rendement du portefeuille sur celui du marché
 source("C:/Users/Yann/Documents/GitHub/statapp/black_litterman_code_kevin.r")
 
-p=t(fopt2(sigma(rdt_j_a),colMeans(rdt_j_a),0.012))
-rdt_pf=t(p%*%t(rdt_j[,titres_cac40]))
+p=t(fopt2(var(rdt_j_a),colMeans(rdt_j_a),0.012))
+rdt_pf=t(p%*%t(rdt_j_a))
 
 lm.beta=lm(rdt_pf ~ rdt_j[,"cac40"])
 
 summary(lm.beta)
+library(xtable)
+print(xtable(summary(lm.beta)), type="latex", file="D:/cours/2A/Statap/Mémoire/summary_beta.tex")
 
 plot(rdt_j[,"cac40"],rdt_pf,xlab="Rendement du marché",ylab="Rendement du portefeuille",main="Régression linéaire du rendement du portefeuille sur celui du marché")
 abline(lm.beta,col='red')
@@ -22,4 +24,6 @@ bptest(lm.beta)
 library(car)
 ncvTest(lm.beta)
 
-print(xtable(summary(lm.beta)), type="latex", file="D:/cours/2A/Statap/Mémoire/summary_beta.tex")
+# on a de l'hétéroscédasticité, on corrige alors la matrice des covariances
+library(sandwich)
+coeftest(lm.beta, vcov = vcovHC(lm.beta, type = "HC3"))
