@@ -1,6 +1,6 @@
 ###### Ce fichier produit toutes les statistiques et tests utilisés dans notre mémoire
 
-library("moments")
+library(moments)
 
 ## TESTS
 # 1) Test de Kolmogoroff-Smirnoff
@@ -21,8 +21,8 @@ f_jb<- function(Y,i){
 # Tracé de l'histogramme des rendements, visuel par rapport au suivi d'une loi normale
 f_graph <- function(Y,i,n){
   plot.new()
-  hist(Y[,i],prob=T,nclass=n,main=paste("Histogramme et densités du rendement de ",toupper(titres_presents[i]),sep=""))
-  curve(dnorm(x,mean(Y[,i]),sqrt(var(Y[,i]))),from=-0.5,to=0.5,col='red',add=T)
+  hist(Y[,i],prob=T,nclass=n,main=paste("Histogramme et densités du rendement de ",toupper(titres_selec[i]),sep=""))
+  curve(dnorm(x,mean(Y[,i]),sqrt(var(Y[,i]))),from=-0.6,to=0.6,n=10000,col='red',add=T)
   lines(density(Y[,i]),col='blue')
   legend("topleft",c("Densité empirique","Densité théorique"),col=c('blue','red'),bty="n",lty=c("solid","solid"))
 }
@@ -35,12 +35,25 @@ f_sharpe <- function(Y,i,r){
 }
 
 # 2) VaR
-f_var <- function(Y,i,alpha){
-  return(quantile(Y[,i],alpha))
+f_var <- function(Y,alpha){
+  return(quantile(Y,alpha))
+}
+
+# 2bis) VaR approximée de Cornish Fisher
+f_var_cf <- function(Y,alpha,T=1){
+  q=qnorm(alpha)
+  qcf=q+skewness(Y)*(q^-1)/6+kurtosis(Y)*(q^3-3*q)/24-skewness(Y)^2*(2*q^3-5*q)/36
+  return(T*mean(Y)+qcf*sqrt(T*var(Y)))
 }
 
 # 3) CVaR
-f_cvar <- function(Y,i,alpha){
-  var=quantile(Y[,i],alpha)
-  return(sum(Y[,i]*(Y[,i]<var))/sum((Y[,i]<var)))
+f_cvar <- function(Y,alpha){
+  var=quantile(Y,alpha)
+  return(sum(Y*(Y<var))/sum((Y<var)))
+}
+
+# 3bis) CVaR par calcul intégral
+f_cvar_int<-function(Y,alpha){
+  f<-function(a){quantile(rdt_pf,a)}
+  return(integrate(f,lower=0,upper=alpha)$value/alpha)
 }

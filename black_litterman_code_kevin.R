@@ -38,7 +38,7 @@ fopt2<-function(Q,X,r) {
 rf=mean(rdt_j[,"OAT"])
 SIGMA=cov(rdt_j_a) #matrice des covariances
 
-poids_strat0=fopt2(SIGMA,colMeans(rdt_j_a),0.0012) #poids du portefeuille stratégique calculé via la fonction fopt2/ on fixe le rendement à r=0.012 (optimal selon la frontière efficiente)
+poids_strat0=fopt2(SIGMA,colMeans(rdt_j_a),0.001169648) #poids du portefeuille stratégique calculé via la fonction fopt2/ on fixe le rendement à r=0.01169648 (optimal selon la frontière efficiente)
 moy_rdt_hist=t(poids_strat0)%*%colMeans(rdt_j_a) #rendement historique du portefeuille 
 lambda=(moy_rdt_hist-rf)/(t(poids_strat0)%*%SIGMA%*%poids_strat0) #coefficient d'aversion au risque
 
