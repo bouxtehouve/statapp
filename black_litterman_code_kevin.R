@@ -1,6 +1,7 @@
-source("/Users/dano/Desktop/essai victor/extraction data.r")
-source("/Users/dano/Desktop/essai victor/tests stats.r")
-source("/Users/dano/Desktop/essai victor/opti pf.r")
+path="C:/Users/Yann/Documents/GitHub/statapp"
+source(paste(path,"extraction data.r",sep="/"))
+source(paste(path,"tests stats.r",sep="/"))
+source(paste(path,"opti pf.r",sep="/"))
 
 titres_selec=c("orange","tf1","airliquide","alcatel-lucent","carrefour","kering","loreal","peugeot","thales","bnp","bouygues","soge","total","vinci","capgemini","oat","cac40")
 titres_selec_oat=c("orange","tf1","airliquide","alcatel-lucent","carrefour","kering","loreal","peugeot","thales","bnp","bouygues","soge","total","vinci","capgemini")
@@ -35,10 +36,10 @@ fopt2<-function(Q,X,r) {
 ####################### Première étape ###############################################################################
 #on a vu precedemment que l'on ne prend pas en compte l'actif sans risque dans notre portefeuille
 # Vector of implied excess return (rendement portefeuille stratégique)
-rf=mean(rdt_j[,"OAT"])
+rf=mean(rdt_j[,"oat"])
 SIGMA=cov(rdt_j_a) #matrice des covariances
 
-poids_strat0=fopt2(SIGMA,colMeans(rdt_j_a),0.001169648) #poids du portefeuille stratégique calculé via la fonction fopt2/ on fixe le rendement à r=0.01169648 (optimal selon la frontière efficiente)
+poids_strat0=fopt2(SIGMA,colMeans(rdt_j_a),0.001169648) #poids du portefeuille stratégique calculé via la fonction fopt2/ on fixe le rendement à r=0.001169648  (optimal selon la frontière efficiente)
 moy_rdt_hist=t(poids_strat0)%*%colMeans(rdt_j_a) #rendement historique du portefeuille 
 lambda=(moy_rdt_hist-rf)/(t(poids_strat0)%*%SIGMA%*%poids_strat0) #coefficient d'aversion au risque
 
@@ -215,6 +216,17 @@ f_sharpe<-function(poids,rdt,r,sigma){
   return(a)
 }
 
-f_sharpe(poids_strat1,rdt_j_a_2007,mean(rdt_j_2007[,"OAT"]),SIGMA_2007)
-f_sharpe(WBL2,rdt_j_a_2007,mean(rdt_j_2007[,"OAT"]),SIGMA_2007)
-f_sharpe(WBL2_garch,rdt_j_a_2007,mean(rdt_j_2007[,"OAT"]),SIGMA_2007)
+f_ic_sharpe<-function(poids,rdt,r,sigma,alpha){
+  sr=f_sharpe(poids,rdt,r,sigma)
+  sk=skewness(t(t(poids)%*%t(rdt)-r))
+  k=kurtosis(t(t(poids)%*%t(rdt)-r))
+  sigma=sqrt((1-sk*sr+(k-1)/4*sr^2)/(nrow(rdt)-1))
+  q=qnorm(1-alpha/2)
+  return(c(sr-q*sigma,sr+q*sigma))
+}
+f_ic_sharpe(poids_strat0,rdt_j_a,mean(rdt_j[,"oat"]),var(rdt_j_a),0.01)
+
+f_sharpe(poids_strat0,rdt_j_a,mean(rdt_j[,"oat"]),var(rdt_j_a))
+f_sharpe(poids_strat1,rdt_j_a_2007,mean(rdt_j_2007[,"oat"]),SIGMA_2007)
+f_sharpe(WBL2,rdt_j_a_2007,mean(rdt_j_2007[,"oat"]),SIGMA_2007)
+f_sharpe(WBL2_garch,rdt_j_a_2007,mean(rdt_j_2007[,"oat"]),SIGMA_2007)
