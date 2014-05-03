@@ -51,3 +51,9 @@ f_cvar <- function(Y,alpha){
   var=quantile(Y,alpha)
   return(sum(Y*(Y<var))/sum((Y<var)))
 }
+
+# 3bis) CVaR par calcul intégral
+f_cvar_int<-function(Y,alpha){
+  f<-function(a){quantile(rdt_pf,a)}
+  return(integrate(f,lower=0,upper=alpha)$value/alpha)
+}
