@@ -1,8 +1,8 @@
 ## Etude du coefficient beta issu de la régression linéaire du rendement du portefeuille sur celui du marché
-source("C:/Users/Yann/Documents/GitHub/statapp/black_litterman_code_kevin.r")
+source(paste(path,"black_litterman_code_kevin.r",sep="/"))
 
-p=t(fopt2(sigma(rdt_j_a),colMeans(rdt_j_a),0.012))
-rdt_pf=t(p%*%t(rdt_j[,titres_cac40]))
+p=t(fopt2(sigma(rdt_j_a),colMeans(rdt_j_a),0.001169648))
+rdt_pf=t(p%*%t(rdt_j_a))
 
 lm.beta=lm(rdt_pf ~ rdt_j[,"cac40"])
 

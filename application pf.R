@@ -1,9 +1,10 @@
-source("C:/Users/Yann/Documents/GitHub/statapp/extraction data.r")
-source("C:/Users/Yann/Documents/GitHub/statapp/tests stats.r")
-source("C:/Users/Yann/Documents/GitHub/statapp/opti pf.r")
-source("C:/Users/Yann/Documents/GitHub/statapp/black_litterman_code_kevin.r")
-source("C:/Users/Yann/Documents/GitHub/statapp/black-litterman.r")
-source("C:/Users/Yann/Documents/GitHub/statapp/frontiere_efficiente.r")
+path="C:/Users/Yann/Documents/GitHub/statapp"
+source(paste(path,"extraction data.r",sep="/"))
+source(paste(path,"tests stats.r",sep="/"))
+source(paste(path,"opti pf.r",sep="/"))
+source(paste(path,"black_litterman_code_kevin.r",sep="/"))
+source(paste(path,"black-litterman.r",sep="/"))
+source(paste(path,"frontiere_efficiente.r",sep="/"))
 
 titres_selec=c("orange","tf1","airliquide","alcatel-lucent","carrefour","kering","loreal","peugeot","thales","bnp","bouygues","soge","total","vinci","capgemini","oat","cac40")
 titres_selec_oat=c("orange","tf1","airliquide","alcatel-lucent","carrefour","kering","loreal","peugeot","thales","bnp","bouygues","soge","total","vinci","capgemini")

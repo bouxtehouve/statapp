@@ -1,8 +1,8 @@
 cat("\014")
-source("/Users/Bouxtehouve/Documents/ENSAE/2A/Projet Statapp/code/extraction data.r")
-#source("/Users/Bouxtehouve/Documents/ENSAE/2A/Projet Statapp/code/tests stats.r")
-#source("/Users/Bouxtehouve/Documents/ENSAE/2A/Projet Statapp/code/opti pf.r")
-source("/Users/Bouxtehouve/Documents/ENSAE/2A/Projet Statapp/code/previsions.r")
+source(paste(path,"extraction data.r",sep="/"))
+source(paste(path,"tests stats.r",sep="/"))
+source(paste(path,"opti pf.r",sep="/"))
+source(paste(path,"previsions.r",sep="/"))
 library(nleqslv)
 ##On dispose des donnees suivantes:
 # X vecteur des rendements
