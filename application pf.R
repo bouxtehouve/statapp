@@ -13,7 +13,7 @@ datap_j = load_data("01/01/2003", "31/12/2006", titres = titres_selec, type = "J
 rdt_j = global_return(datap_j)
 
 # Produit une ACP sur les cours des actions pour obtenir le cercle des corr?lations gr?ce au package suivant
-library("FactoMineR")
+library(FactoMineR)
 #PCA(rdt_j,graph=T)
 
 mean(rdt_j[,"airliquide"])
