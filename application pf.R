@@ -53,9 +53,9 @@ efficientPortfolio(rdt_journalier_oat, spec,constraints) #  calcul le portefeuil
 tangencyPortfolio(rdt_journalier_oat,spec,constraints) # calcul le portefeuille ayant le meilleur rapport rendement/risque de la frontière efficiente (c-a-d le meilleur ratio de Sharpe)
                                                        # on selectionne ce portefeuille pariculier
 # on peu également utiliser nos propres fonctions pour trouver les poids optimaux
-# d'après le graphe de la frontière efficiente, le meilleur rendement est 0.12%
+# d'après  la frontière efficiente, le meilleur rendement est 0.001169648
 
-fopt2(cov(rdt_j[,titres_selec_oat]),colMeans(rdt_j[,titres_selec_oat]),0.0012) #on obtient des poids identiques à ceux obtenus avec efficientPortfolio
+fopt2(cov(rdt_j[,titres_selec_oat]),colMeans(rdt_j[,titres_selec_oat]),0.001169648) #on obtient des poids identiques à ceux obtenus avec efficientPortfolio
 
 # Frontière efficiente Var-mean
 
