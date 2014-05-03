@@ -14,7 +14,7 @@ library(nleqslv)
 # la matrice omega donne les niveaux de confiance sur chaque vue
 
 ######################## Etape 0 : fonctions de base ( servent pour les 2 modeles) ##############################################################################
-fopt2<-function(Q,X,r = 0.012) {
+fopt2<-function(Q,X,r = 0.001169648) {
   
   n=length(X)
   v1=numeric(n)+1
@@ -58,7 +58,8 @@ r_av_coeff <- function(X,p,rf){
 
 f_Er <- function(X,tau,impexc,P,Q,omega){
   # Renvoie E(R) en fonction du implied excess returns et des previsions
-  sigma <- sigma(X)
+  v_ant <- apply(X,2,"volatiliteGARCH")
+  sigma <- sigma_ant(X,v_ant)
   return(impexc + tau*sigma%*%t(P)%*%solve(omega+tau*P%*%sigma%*%t(P))%*%(Q - P%*%impexc))
 }
 
