@@ -198,7 +198,7 @@ WBL2_garch=fopt_uc(SIGMA_forecast,rdt_litterman_garch) # tq la somme des poids v
 # test sur les données de 2007
 
 datap_j_2007=load_data("01/01/2007", "01/05/2007", titres = titres_selec, type = "J")
-rdt_j_2007 = rendements(datap_j_2007)
+rdt_j_2007 = global_return(datap_j_2007)
 rdt_j_a_2007=rdt_j_2007[,titres_selec_oat]
 SIGMA_2007=cov(rdt_j_a_2007)
 

@@ -102,7 +102,7 @@ frontierRETURN_VAR<-function(M){
   Var=c()
   rendement=c()
   
-  for (i in 1:dim(M)[2]) {Var=c(Var,f_var(M,i,0.05))
+  for (i in 1:dim(M)[2]) {Var=c(Var,f_var(M[,i],0.05))
                           rendement=c(rendement,mean(M[,i]))
   }
   M=cbind(Var,rendement)
