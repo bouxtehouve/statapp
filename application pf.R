@@ -15,14 +15,7 @@ rdt_j = global_return(datap_j)
 
 # Produit une ACP sur les cours des actions pour obtenir le cercle des corr?lations gr?ce au package suivant
 library(FactoMineR)
-#PCA(rdt_j,graph=T)
-
-mean(rdt_j[,"airliquide"])
-
-P=fopt(var(datap_j[,titres_selec_oat]),colMeans(rdt_j[,titres_selec_oat]),0.003,mean(rdt_j[,"OAT"]))
-f_esp(datap_j,P)
-
-fronteffi(var(datap_j[,titres_selec_oat]),colMeans(rdt_j[,titres_selec_oat]),mean(rdt_j[,"OAT"]))
+PCA(rdt_j,graph=T)
 
 #Frontière efficiente
 library(fPortfolio)
@@ -32,9 +25,10 @@ rdt_journalier_oat=rdt_journalier[,titres_selec_oat] # sans l'oAT
 
 spec=portfolioSpec() #description des spécificités de notre portefeuille
 setTargetReturn(spec)=mean(colMeans(rdt_journalier)) # spécifier un rendement objectif
-setRiskFreeRate(spec)=mean(rdt_journalier[,"OAT"]) # rendement moyen de l'actif sans risque
+setRiskFreeRate(spec)=mean(rdt_journalier[,"oat"]) # rendement moyen de l'actif sans risque
 spec
 
+n=ncol(rdt_journaliers_oat)
 constraints=c("minW[1:n]=-1") #spécification des contraintes, ici on autorise des poids négatifs
 portfolioConstraints(rdt_journalier_oat, spec,constraints) # description des contraintes
 
