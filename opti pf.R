@@ -64,3 +64,20 @@ fronteffi<-function(Q,X,rf) {
   plot(y1,x,col="red",type="l",xlab="rendement",ylab="volatilité",main="Frontière efficiente")
   lines(y2,x,type="l",col="blue")
 }
+
+#Poids optimaux avec uniquement des actifs risqués
+fopt2<-function(Q,X,r) {
+  
+  n=length(X)
+  v1=numeric(n)+1
+  M=matrix(c(0,0,0,0),2,2)
+  
+  M[1,1]=t(X)%*%solve(Q)%*%X             #étape de calcul intermédiaire pour calculer les poids
+  M[1,2]=t(X)%*%solve(Q)%*%v1  
+  M[2,1]=t(v1)%*%solve(Q)%*%v1  
+  M[2,2]=M[1,1]*M[2,1]-M[1,2]^2  
+  
+  poids=((M[2,1]*r-M[1,2])/M[2,2])*solve(Q)%*%X +((M[1,1]-M[1,2]*r)/M[2,2])*solve(Q)%*%v1  #vecteur de poids
+  return(poids) 
+  
+}
