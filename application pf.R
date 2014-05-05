@@ -22,6 +22,7 @@ library(fPortfolio)
 
 rdt_journalier=as.timeSeries(global_return(datap_j)) # necessaire de transformer rdt_j en séries temporelles avec la library fPortfolio
 rdt_journalier_oat=rdt_journalier[,titres_selec_oat] # sans l'oAT
+n=dim(rdt_journalier_oat)[2]
 
 spec=portfolioSpec() #description des spécificités de notre portefeuille
 setTargetReturn(spec)=mean(colMeans(rdt_journalier)) # spécifier un rendement objectif
